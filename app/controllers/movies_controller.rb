@@ -7,7 +7,13 @@ class MoviesController < ApplicationController
   end
 
   def index
-    @movies = Movie.all
+    @all_ratings = Movie.all_ratings
+    # Convert to array if it's nil or just use the keys if it's present
+    @ratings_to_show = params[:ratings] &.keys || @all_ratings
+    @movies = Movie.with_ratings(@ratings_to_show)
+
+    # Persist the ratings to the sesion to remember the user's choices
+    session[:ratings] = params[:ratins] if params[:ratings].present?
   end
 
   def new
