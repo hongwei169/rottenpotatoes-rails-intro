@@ -10,10 +10,19 @@ class MoviesController < ApplicationController
     @all_ratings = Movie.all_ratings
     # Convert to array if it's nil or just use the keys if it's present
     @ratings_to_show = params[:ratings] &.keys || @all_ratings
-    @movies = Movie.with_ratings(@ratings_to_show)
+   
 
     # Persist the ratings to the sesion to remember the user's choices
-    session[:ratings] = params[:ratins] if params[:ratings].present?
+    session[:ratings] = params[:ratings] if params[:ratings].present?
+
+    # Sorting
+    @sort_column = params[:sort] || session[:sort]
+    session[:sort] = @sort_column
+    @movies = Movie.with_ratings(@ratings_to_show).order(@sort_column)
+
+    # Set the CSS class for the header
+    @title_header_class = 'hilite bg warning' if @sort_column == 'title'
+    @release_date_class = 'hilite bg warning' if @sort_column == 'release_date'
   end
 
   def new
