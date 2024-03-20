@@ -8,16 +8,30 @@ class MoviesController < ApplicationController
 
   def index
     @all_ratings = Movie.all_ratings
-    # Convert to array if it's nil or just use the keys if it's present
-    @ratings_to_show = params[:ratings] &.keys || @all_ratings
-   
 
-    # Persist the ratings to the sesion to remember the user's choices
-    session[:ratings] = params[:ratings] if params[:ratings].present?
+    # Check if user has come via a form submission with params
+    if params[:commit].present? || params[:sort].present?
+      # Params are present, meaning that the suer has actively sorted or changed filters
+      @ratings_to_show = params[:ratings]&.keys || @all_ratings
+      @sort_column = params[:sort]
+      # Save the filtersto the session
+      session[:ratings] = params[:ratings]
+      session[:sort] = @sort_column
 
-    # Sorting
-    @sort_column = params[:sort] || session[:sort]
-    session[:sort] = @sort_column
+    elsif request.referer.nil? || URI(request.referer).path != movies_path
+      # The user likely directly accessed the index page or refreshed internal
+      # Use the session or default to show all the ratings
+      @ratings_to_show = session[:ratings]&.keys || @all_ratings
+      @sort_column = session[:sort]
+    else
+      # User has navigated back to the index without form submission
+      # Revert to the settings saved in the session or default to all ratings
+      @ratings_to_show = session[:ratings]&.keys || @all_ratings
+      @sort_column = session[:sort]
+      # Reset session if necessary
+      session[:ratings] = nil if params[:ratings].blank?
+    end
+
     @movies = Movie.with_ratings(@ratings_to_show).order(@sort_column)
 
     # Set the CSS class for the header
